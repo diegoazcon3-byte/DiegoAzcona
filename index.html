@@ -1,0 +1,486 @@
+<title>Diego Azcona</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+<style>
+  /* Layout: one narrow centered column on black. Name, a PCB-trace strip, four hover/tap sections, contact links at the bottom. */
+  :root {
+    --bg: #08080a;
+    --fg: #ecece8;
+    --muted: #8e8e94;
+    --line: #232327;
+    --accent: #e5484d; /* red trace */
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 48px 32px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  header { display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 9vw, 3.75rem);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .tagline { margin: 0; color: var(--muted); max-width: 46ch; }
+
+
+  /* 3D board: scene is scaled to fit by script, board is tilted and spun by pointer */
+  .stage { position: relative; height: 300px; margin-block: 28px 4px; perspective: 1100px; overflow-x: clip; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .stage.drag { cursor: grabbing; }
+  .rig { position: absolute; left: 50%; top: 50%; width: 640px; height: 320px; margin: -160px 0 0 -320px; transform: scale(var(--s, 1)); transform-style: preserve-3d; }
+  .board { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(52deg) rotateZ(0deg); will-change: transform; }
+  .sub { position: absolute; inset: 0; border-radius: 12px; background: #1c1c20; }
+  .sub.top { background: linear-gradient(135deg, #131316, #0a0a0c); border: 1px solid #2c2c32; }
+  .layer { position: absolute; left: 0; top: 0; display: block; }
+  .cu { transform: translateZ(1px); }
+  .silk { transform: translateZ(2px); }
+  .cu .t { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+  .cu .pd { fill: var(--accent); }
+  .cu .via { fill: #0a0a0c; stroke: var(--accent); stroke-width: 2; }
+  .silk .o { fill: none; stroke: rgba(236, 236, 232, 0.4); stroke-width: 1.2; }
+  .silk .hole { fill: #050506; stroke: #3a3a40; stroke-width: 2; }
+  .silk text { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; fill: rgba(236, 236, 232, 0.55); }
+  .silk text.big { font-size: 13px; fill: rgba(236, 236, 232, 0.8); }
+  .glow { position: absolute; left: 358px; top: 152px; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, rgba(229, 72, 77, 0.5), transparent 65%); transform: translateZ(1.4px); animation: blink 2.4s ease-in-out infinite; pointer-events: none; }
+  .parts { position: absolute; inset: 0; transform-style: preserve-3d; transform: translateZ(2.5px); }
+  .part { position: absolute; transform-style: preserve-3d; cursor: pointer; }
+  .part .f { position: absolute; display: block; }
+  .part .tp { inset: 0; transform: translateZ(var(--t)); background: var(--top); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-mono); color: var(--fg); transition: box-shadow 0.2s; }
+  .part .ft { left: 0; top: 100%; width: 100%; height: var(--t); transform-origin: top; transform: rotateX(90deg); background: var(--side); filter: brightness(0.8); }
+  .part .bk { left: 0; top: calc(-1 * var(--t)); width: 100%; height: var(--t); transform-origin: bottom; transform: rotateX(-90deg); background: var(--side); filter: brightness(0.6); }
+  .part .rt { top: 0; left: 100%; width: var(--t); height: 100%; transform-origin: left; transform: rotateY(-90deg); background: var(--side); filter: brightness(0.7); }
+  .part .lf { top: 0; left: calc(-1 * var(--t)); width: var(--t); height: 100%; transform-origin: right; transform: rotateY(90deg); background: var(--side); filter: brightness(0.7); }
+  .part.on .tp { box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(229, 72, 77, 0.55); }
+  .part.led .tp { animation: blink 2.4s ease-in-out infinite; }
+  .part .tp b { font-weight: 500; font-size: 17px; letter-spacing: 0.12em; }
+  .part .tp span { font-size: 9px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
+  .part .tp em { font-style: normal; font-size: 8px; letter-spacing: 0.06em; color: var(--muted); }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .cap { margin: 0; min-height: 3.2em; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; color: var(--muted); max-width: 62ch; }
+  .cap strong { color: var(--accent); font-weight: 500; margin-right: 6px; }
+  .hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin: 0 0 10px; }
+
+  .sec { border-top: 1px solid var(--line); }
+  .sec:last-of-type { border-bottom: 1px solid var(--line); }
+  .sec > button {
+    all: unset;
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 2px;
+    cursor: pointer;
+    font-size: 1.25rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    transition: color 0.2s;
+  }
+  .sec > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sec > button:hover, .sec.open > button { color: var(--accent); }
+  .plus { position: relative; width: 14px; height: 14px; flex: none; }
+  .plus::before, .plus::after { content: ""; position: absolute; background: currentColor; transition: transform 0.25s; }
+  .plus::before { left: 0; right: 0; top: 6px; height: 1.5px; }
+  .plus::after { top: 0; bottom: 0; left: 6px; width: 1.5px; }
+  .sec.open .plus::after { transform: scaleY(0); }
+
+  .panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+  .sec.open .panel { grid-template-rows: 1fr; }
+  .panel > div { overflow: hidden; min-width: 0; }
+  .body { padding: 2px 2px 28px; display: flex; flex-direction: column; gap: 22px; }
+  .body p { margin: 0; max-width: 62ch; }
+
+  .item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .item h3 { margin: 0; font-size: 1.02rem; font-weight: 500; }
+  .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; }
+  .item ul { margin: 4px 0 0; padding-left: 1.1em; color: #c7c7c9; max-width: 64ch; }
+  .item li { margin-bottom: 6px; }
+  .item li::marker { color: var(--accent); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag { font-family: var(--font-mono); font-size: 0.72rem; border: 1px solid var(--line); border-radius: 3px; padding: 2px 8px; color: var(--muted); }
+
+  dl.facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; }
+  dl.facts dt { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; padding-top: 3px; }
+  dl.facts dd { margin: 0; min-width: 0; color: #c7c7c9; }
+
+  footer { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; }
+  .links a, .copy {
+    all: unset;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .links a:hover, .copy:hover { color: var(--accent); border-color: var(--accent); }
+  .links a:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .email { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; user-select: all; }
+  .small { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; }
+
+  @media (max-width: 520px) {
+    body { padding-block: 32px 24px; }
+    dl.facts { grid-template-columns: 1fr; gap: 2px; }
+    dl.facts dd { margin-bottom: 10px; }
+  }
+  @media (hover: none), (max-width: 520px) {
+    body { -webkit-tap-highlight-color: transparent; }
+    .sec > button { padding-block: 24px; min-height: 64px; }
+    .links a, .copy { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.9rem; }
+    .links { gap: 4px 28px; }
+    .cap { font-size: 0.8rem; min-height: 4.8em; }
+    .hint { font-size: 0.7rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glow, .part.led .tp { animation: none; }
+    .panel, .plus::before, .plus::after, .sec > button { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Electrical Engineering</span>
+    <h1>Diego Azcona</h1>
+    <p class="tagline">Electrical engineering student at NJIT building embedded systems, circuits, and hands-on engineering projects.</p>
+  </header>
+
+  <div class="stage" id="stage" role="group" aria-label="Interactive 3D circuit board. Move the cursor or drag to rotate it. Hover or tap a component to identify it.">
+    <div class="rig" id="rig">
+      <div class="board" id="board">
+        <div class="sub" style="transform: translateZ(-4px)"></div>
+        <div class="sub" style="transform: translateZ(-3px)"></div>
+        <div class="sub" style="transform: translateZ(-2px)"></div>
+        <div class="sub" style="transform: translateZ(-1px)"></div>
+        <div class="sub top"></div>
+        <div class="glow"></div>
+        <svg class="layer cu" width="640" height="320" viewBox="0 0 640 320" aria-hidden="true">
+          <path class="t" d="M49 263 V132 L61 120 H200"/>
+          <path class="t" d="M67 263 V152 L79 140 H200"/>
+          <path class="t" d="M85 263 V172 L97 160 H200"/>
+          <path class="t" d="M103 263 V192 L115 180 H200"/>
+          <path class="t" d="M126 82 H200"/>
+          <path class="t" d="M350 100 H490 V150 H510 V70 H530 V150 H550 V70 H570 V150 H590 V70 H606"/>
+          <path class="t" d="M350 129 H372 M394 129 H430"/>
+          <path class="t" d="M350 202 H398 M418 202 H432 M460 202 H520"/>
+          <path class="t" d="M350 232 H432 M460 232 H520"/>
+          <rect class="pd" x="394" y="198" width="6" height="8"/><rect class="pd" x="416" y="198" width="6" height="8"/>
+          <rect class="pd" x="428" y="198" width="6" height="8"/><rect class="pd" x="458" y="198" width="6" height="8"/>
+          <rect class="pd" x="428" y="228" width="6" height="8"/><rect class="pd" x="458" y="228" width="6" height="8"/>
+          <rect class="pd" x="368" y="122" width="6" height="14"/><rect class="pd" x="392" y="122" width="6" height="14"/>
+          <circle class="pd" cx="606" cy="70" r="5"/>
+          <circle class="via" cx="434" cy="129" r="5"/>
+          <circle class="via" cx="524" cy="202" r="5"/>
+          <circle class="via" cx="524" cy="232" r="5"/>
+          <circle class="via" cx="160" cy="236" r="5"/>
+          <circle class="via" cx="596" cy="206" r="5"/>
+          <circle class="via" cx="560" cy="250" r="5"/>
+        </svg>
+        <svg class="layer silk" width="640" height="320" viewBox="0 0 640 320" aria-hidden="true">
+          <rect class="o" x="8" y="8" width="624" height="304" rx="8"/>
+          <circle class="hole" cx="22" cy="22" r="6"/><circle class="hole" cx="618" cy="22" r="6"/>
+          <circle class="hole" cx="22" cy="298" r="6"/><circle class="hole" cx="618" cy="298" r="6"/>
+          <rect class="o" x="195" y="65" width="160" height="160"/>
+          <rect class="o" x="75" y="55" width="56" height="54"/>
+          <rect class="o" x="36" y="247" width="152" height="32"/>
+          <path class="o" d="M480 160 V62 H614 V160 Z" stroke-dasharray="3 4"/>
+          <text x="198" y="58">U1</text><text x="78" y="49">U2</text><text x="38" y="241">J1</text>
+          <text x="398" y="188">LED1</text><text x="432" y="188">R1</text><text x="432" y="219">R2</text>
+          <text x="372" y="112">C1</text><text x="484" y="176">ANT1</text>
+          <text class="big" x="226" y="262">DIEGO AZCONA</text>
+          <text x="226" y="280">REV A / NJIT EE 2028</text>
+          <text x="430" y="296">FIREIQ NODE 01</text>
+        </svg>
+        <div class="parts" id="parts"></div>
+      </div>
+    </div>
+  </div>
+  <p class="cap" id="cap" aria-live="polite"></p>
+  <p class="hint" id="stagehint"></p>
+
+  <p class="hint">HOVER OR TAP A SECTION</p>
+
+  <section class="sec" id="about">
+    <button type="button" aria-expanded="false" aria-controls="p-about"><span>About</span><span class="plus" aria-hidden="true"></span></button>
+    <div class="panel" id="p-about" role="region" aria-label="About"><div>
+      <div class="body">
+        <p>I'm pursuing a Bachelor of Science in Electrical Engineering with a minor in Applied Mathematics at the New Jersey Institute of Technology, expecting to graduate in May 2028. I'm passionate about hands-on engineering, from designing and assembling circuits to developing embedded systems and bringing ideas to life through practical, real-world applications.</p>
+        <dl class="facts">
+          <dt>Education</dt><dd>NJIT, Newark NJ. B.S. Electrical Engineering, minor in Applied Mathematics. GPA 3.57.</dd>
+          <dt>Coursework</dt><dd>Circuits II, Digital Design, Energy Conversion, Signals and Systems</dd>
+          <dt>Honors</dt><dd>Grace Hopper STEM Scholarship, Dean's List, John C Hartman Scholarship</dd>
+          <dt>Software</dt><dd>KiCAD, Multisim, Arduino IDE, STM32CubeIDE, MATLAB, Visio, Bluebeam, Office 365, Adobe, C++</dd>
+          <dt>Bench</dt><dd>Oscilloscope, multimeter, power supply, soldering, epoxy</dd>
+          <dt>CAD</dt><dd>SolidWorks, Fusion 360, Autodesk Revit</dd>
+          <dt>Certified</dt><dd>QCP 1568 Soldering, QCP 1680 Electrostatic Discharge (Kulite, 2026). Risk Assessment and Hazard Evaluation Techniques (NJIT, 2025).</dd>
+        </dl>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="projects">
+    <button type="button" aria-expanded="false" aria-controls="p-projects"><span>Projects</span><span class="plus" aria-hidden="true"></span></button>
+    <div class="panel" id="p-projects" role="region" aria-label="Projects"><div>
+      <div class="body">
+        <div class="item">
+          <h3>FireIQ</h3>
+          <span class="meta">MakeNJIT Hardware Hackathon · April 2026 · Team of 5</span>
+          <ul>
+            <li>Built an IoT wildfire monitoring system on two ESP32 units linked over ESP-NOW, with real-time data updates every 1 to 2 seconds for field deployment.</li>
+            <li>Integrated DHT11, KY-026 and MQ sensors to read temperature, humidity, flame presence and air quality, supporting early hazard detection and estimates of wildfire direction and movement.</li>
+            <li>Wrote the system logic in C++ with an HTML/CSS dashboard and a CAD-based circuit design, aimed at giving first responders faster situational awareness.</li>
+          </ul>
+          <div class="tags"><span class="tag">ESP32</span><span class="tag">ESP-NOW</span><span class="tag">C++</span><span class="tag">IoT sensors</span></div>
+        </div>
+        <div class="item">
+          <h3>NASA HUNCH: ISS Autonomous Vacuum</h3>
+          <span class="meta">January 2024 – May 2024 · Team of 20</span>
+          <ul>
+            <li>Developed an autonomous vacuum prototype for the International Space Station over 5 months, programming and calibrating VEX motors and proximity sensors in ROBOTC for sensor-driven motor control.</li>
+            <li>Ran 10+ hardware and software design iterations that improved system performance and usability by 25%.</li>
+          </ul>
+          <div class="tags"><span class="tag">ROBOTC</span><span class="tag">VEX</span><span class="tag">Sensors</span><span class="tag">Prototyping</span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="experience">
+    <button type="button" aria-expanded="false" aria-controls="p-exp"><span>Experience</span><span class="plus" aria-hidden="true"></span></button>
+    <div class="panel" id="p-exp" role="region" aria-label="Experience"><div>
+      <div class="body">
+        <div class="item">
+          <h3>Assembly Engineer, Kulite Semiconductors</h3>
+          <span class="meta">Leonia, NJ · June 2026 – August 2026</span>
+          <ul>
+            <li>Assembled and precision-soldered 50+ semiconductor and amplifier sub-units a day, working with miniature components to strict electrical and mechanical tolerances.</li>
+            <li>Read electrical schematics, component layouts and engineering specifications to place components with correct polarity and connections.</li>
+            <li>Verified electrical continuity, inspected dielectric insulation and checked component tolerances to catch connection defects and prevent shorts.</li>
+          </ul>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="sec" id="involvement">
+    <button type="button" aria-expanded="false" aria-controls="p-inv"><span>Leadership</span><span class="plus" aria-hidden="true"></span></button>
+    <div class="panel" id="p-inv" role="region" aria-label="Leadership"><div>
+      <div class="body">
+        <div class="item">
+          <h3>Project Room Manager, IEEE</h3>
+          <span class="meta">Institute of Electrical and Electronics Engineers · August 2026 – Present</span>
+          <ul><li>Run the IEEE project workspace and keep electronic components, tools, soldering equipment and prototyping resources available for student projects.</li></ul>
+        </div>
+        <div class="item">
+          <h3>Officer, Antennas and Propagation Society</h3>
+          <span class="meta">August 2026 – Present</span>
+          <ul><li>Work with fellow officers on technical workshops and projects covering RF concepts, electronics, electromagnetics and circuit applications.</li></ul>
+        </div>
+        <div class="item">
+          <h3>Committee Member, Society of Hispanic Professional Engineers</h3>
+          <span class="meta">IVP and Public Relations Committees · September 2026 – Present</span>
+          <ul><li>Support SHPE membership initiatives by organizing events, building engagement and promoting STEM education through outreach and mentorship. Previously served on IVP, Community Outreach and Pre-College.</li></ul>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <footer>
+    <div class="links">
+      <a href="https://www.linkedin.com/in/diego-azcona" target="_blank" rel="noopener">LinkedIn</a>
+      <button type="button" class="copy" id="copy" aria-label="Copy email address">Copy email</button>
+    </div>
+    <span class="email" id="email">diegoazcon3@gmail.com</span>
+    <span class="small">Diego Azcona · New Jersey</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var secs = Array.prototype.slice.call(document.querySelectorAll('.sec'));
+
+  function setOpen(sec, open) {
+    sec.classList.toggle('open', open);
+    sec.querySelector('button').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  secs.forEach(function (sec) {
+    var btn = sec.querySelector('button');
+    var pinned = false;
+    btn.addEventListener('click', function () {
+      if (canHover) {
+        pinned = !pinned;
+        setOpen(sec, pinned || sec.matches(':hover'));
+      } else {
+        setOpen(sec, !sec.classList.contains('open'));
+      }
+    });
+    if (canHover) {
+      sec.addEventListener('mouseenter', function () { setOpen(sec, true); });
+      sec.addEventListener('mouseleave', function () { if (!pinned) setOpen(sec, false); });
+    }
+  });
+
+  var copy = document.getElementById('copy');
+  var email = document.getElementById('email');
+  copy.addEventListener('click', function () {
+    var text = 'diegoazcon3@gmail.com';
+    function fallback() {
+      var r = document.createRange();
+      r.selectNodeContents(email);
+      var s = window.getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+      copy.textContent = 'Select and copy';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        copy.textContent = 'Copied';
+        setTimeout(function () { copy.textContent = 'Copy email'; }, 1800);
+      }, fallback);
+    } catch (e) { fallback(); }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var rig = document.getElementById('rig');
+  var board = document.getElementById('board');
+  var host = document.getElementById('parts');
+  var cap = document.getElementById('cap');
+  var hintEl = document.getElementById('stagehint');
+  if (!stage) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  hintEl.textContent = canHover ? 'CLICK AND DRAG THE BOARD TO ROTATE · HOVER A PART' : 'DRAG THE BOARD TO ROTATE · TAP A PART';
+
+  var DEFAULT = '<strong>REV A</strong>A FireIQ-style sensor node, drawn in the layout of a real board.';
+  var parts = [
+    { id: 'U1', x: 200, y: 70, w: 150, h: 150, t: 16, top: 'linear-gradient(135deg,#3d3d44,#1c1c20)', side: '#2c2c32', text: '<b>ESP32</b><span>FIREIQ NODE</span>',
+      desc: 'ESP32 module. Runs the C++ firmware and sends sensor data to the second unit over ESP-NOW.' },
+    { id: 'U2', x: 80, y: 60, w: 46, h: 44, t: 8, top: '#1c1c20', side: '#16161a', text: '<em>DHT11</em>',
+      desc: 'DHT11 sensor. Measures temperature and humidity.' },
+    { id: 'J1', x: 40, y: 252, w: 144, h: 22, t: 10, top: 'radial-gradient(circle at 50% 50%, #d4b15f 0 2.6px, transparent 3.2px) 0 0/18px 100%, #111114', side: '#0d0d10', text: '',
+      desc: 'J1 header. Breakout for the flame and gas sensor inputs and power.' },
+    { id: 'LED1', x: 398, y: 196, w: 20, h: 12, t: 6, top: '#ff6b70', side: '#b5252a', text: '', cls: 'led',
+      desc: 'Status LED. Blinks while the node is transmitting.' },
+    { id: 'R1', x: 432, y: 196, w: 28, h: 12, t: 5, top: 'linear-gradient(90deg,#8d8d92 0 18%,#26262b 18% 82%,#8d8d92 82%)', side: '#1b1b1f', text: '',
+      desc: 'Current-limiting resistor for the LED.' },
+    { id: 'R2', x: 432, y: 226, w: 28, h: 12, t: 5, top: 'linear-gradient(90deg,#8d8d92 0 18%,#26262b 18% 82%,#8d8d92 82%)', side: '#1b1b1f', text: '',
+      desc: 'Pull-up resistor on a sensor line.' },
+    { id: 'C1', x: 372, y: 118, w: 22, h: 22, t: 14, top: 'linear-gradient(90deg,#e5484d 0 18%,#2b2b30 18%)', side: '#222226', text: '',
+      desc: 'Decoupling capacitor. Keeps the supply steady while the radio transmits.' },
+    { id: 'ANT1', x: 482, y: 64, w: 132, h: 94, t: 1, top: 'transparent', side: 'transparent', text: '',
+      desc: 'Meandered PCB antenna. The copper trace itself radiates the 2.4 GHz signal.' }
+  ];
+  var byId = {};
+  parts.forEach(function (p) {
+    byId[p.id] = p;
+    var d = document.createElement('div');
+    d.className = 'part' + (p.cls ? ' ' + p.cls : '');
+    d.setAttribute('data-id', p.id);
+    d.style.cssText = 'left:' + p.x + 'px;top:' + p.y + 'px;width:' + p.w + 'px;height:' + p.h + 'px;--t:' + p.t + 'px;--top:' + p.top + ';--side:' + p.side + ';';
+    d.innerHTML = '<i class="f lf"></i><i class="f rt"></i><i class="f bk"></i><i class="f ft"></i><i class="f tp">' + p.text + '</i>';
+    host.appendChild(d);
+  });
+  cap.innerHTML = DEFAULT;
+
+  var current = null;
+  function highlight(el) {
+    if (current === el) return;
+    if (current) current.classList.remove('on');
+    current = el;
+    if (el) {
+      el.classList.add('on');
+      var p = byId[el.getAttribute('data-id')];
+      cap.innerHTML = '<strong>' + p.id + '</strong>' + p.desc;
+    } else {
+      cap.innerHTML = DEFAULT;
+    }
+  }
+  stage.addEventListener('pointerover', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('.part') : null;
+    if (el) highlight(el);
+  });
+  stage.addEventListener('pointerleave', function (e) {
+    if (e.pointerType === 'mouse') highlight(null);
+  });
+
+  var tgt = { rx: 52, rz: 0 }, cur = { rx: 52, rz: 0 };
+  var dragging = false, lastX = 0, visible = true;
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  stage.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true; lastX = e.clientX;
+    stage.classList.add('drag');
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    tgt.rz = clamp(tgt.rz + (e.clientX - lastX) * 0.4, -60, 60);
+    lastX = e.clientX;
+  });
+  function endDrag() { dragging = false; stage.classList.remove('drag'); }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+
+  function apply() {
+    board.style.transform = 'rotateX(' + cur.rx.toFixed(2) + 'deg) rotateZ(' + cur.rz.toFixed(2) + 'deg)';
+  }
+  function tick() {
+    if (visible) {
+      var d = tgt.rz - cur.rz;
+      if (Math.abs(d) > 0.01) {
+        cur.rz += reduce ? d : d * 0.2;
+        apply();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (en) { visible = en[0].isIntersecting; }).observe(stage);
+  }
+
+  function fit() {
+    var w = stage.clientWidth || 640;
+    var sc = Math.min(1, w / 670);
+    rig.style.setProperty('--s', sc);
+    stage.style.height = Math.max(210, Math.round(350 * sc)) + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+})();
+</script>
