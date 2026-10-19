@@ -40,7 +40,7 @@
     color: var(--accent);
   }
   h1 {
-    margin: 0;
+    margin: 0 0 0 -0.06em; /* cancels the large glyph's left side bearing so it lines up with the text below */
     font-size: clamp(2.4rem, 9vw, 3.75rem);
     font-weight: 300;
     letter-spacing: -0.03em;
@@ -51,7 +51,7 @@
 
 
   /* 3D board: scene is scaled to fit by script, board is tilted and spun by pointer */
-  .stage { position: relative; height: 300px; margin-block: 28px 4px; perspective: 1100px; overflow-x: clip; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .stage { position: relative; height: 300px; margin-block: 28px 4px; perspective: 1100px; overflow-x: clip; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
   .stage.drag { cursor: grabbing; }
   .rig { position: absolute; left: 50%; top: 50%; width: 640px; height: 320px; margin: -160px 0 0 -320px; transform: scale(var(--s, 1)); transform-style: preserve-3d; }
   .board { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(52deg) rotateZ(0deg); will-change: transform; }
@@ -82,7 +82,7 @@
   .part .tp span { font-size: 9px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
   .part .tp em { font-style: normal; font-size: 8px; letter-spacing: 0.06em; color: var(--muted); }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-  .cap { margin: 0; min-height: 3.2em; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; color: var(--muted); max-width: 62ch; }
+  .cap { margin: 0; min-height: 3.2em; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; color: var(--muted); }
   .cap strong { color: var(--accent); font-weight: 500; margin-right: 6px; }
   .hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin: 0 0 10px; }
 
@@ -110,12 +110,15 @@
   .plus::before { left: 0; right: 0; top: 6px; height: 1.5px; }
   .plus::after { top: 0; bottom: 0; left: 6px; width: 1.5px; }
   .sec.open .plus::after { transform: scaleY(0); }
+  /* pinned: the minus becomes a solder-pad ring with a filled center */
+  .sec.pinned .plus::before { top: 0; height: 14px; border: 1.5px solid currentColor; border-radius: 50%; background: transparent; box-sizing: border-box; }
+  .sec.pinned .plus::after { top: 4px; bottom: auto; left: 4px; width: 6px; height: 6px; border-radius: 50%; transform: none; }
 
   .panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
   .sec.open .panel { grid-template-rows: 1fr; }
   .panel > div { overflow: hidden; min-width: 0; }
   .body { padding: 2px 2px 28px; display: flex; flex-direction: column; gap: 22px; }
-  .body p { margin: 0; max-width: 62ch; }
+  .body p { margin: 0; }
 
   .item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .item h3 { margin: 0; font-size: 1.02rem; font-weight: 500; }
@@ -126,7 +129,7 @@
   .mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
   .mark svg { display: block; }
   .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; }
-  .item ul { margin: 4px 0 0; padding-left: 1.1em; color: #c7c7c9; max-width: 64ch; }
+  .item ul { margin: 4px 0 0; padding-left: 1.1em; color: #c7c7c9; }
   .item li { margin-bottom: 6px; }
   .item li::marker { color: var(--accent); }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
@@ -149,6 +152,7 @@
     transition: color 0.2s, border-color 0.2s;
   }
   .links a:hover, .copy:hover { color: var(--accent); border-color: var(--accent); }
+  .links a[href*="linkedin"]:hover, .links a[href*="linkedin"]:focus-visible { color: #378fe9; border-color: #378fe9; outline-color: #378fe9; }
   .links a:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .email { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; user-select: all; }
   .small { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; }
@@ -193,7 +197,7 @@
           <path class="t" d="M67 263 V152 L79 140 H200"/>
           <path class="t" d="M85 263 V172 L97 160 H200"/>
           <path class="t" d="M103 263 V192 L115 180 H200"/>
-          <path class="t" d="M126 82 H200"/>
+          <path class="t" d="M138 80 H200"/>
           <path class="t" d="M350 100 H490 V150 H510 V70 H530 V150 H550 V70 H570 V150 H590 V70 H606"/>
           <path class="t" d="M350 129 H372 M394 129 H430"/>
           <path class="t" d="M350 202 H398 M418 202 H432 M460 202 H520"/>
@@ -215,10 +219,10 @@
           <circle class="hole" cx="22" cy="22" r="6"/><circle class="hole" cx="618" cy="22" r="6"/>
           <circle class="hole" cx="22" cy="298" r="6"/><circle class="hole" cx="618" cy="298" r="6"/>
           <rect class="o" x="195" y="65" width="160" height="160"/>
-          <rect class="o" x="75" y="55" width="56" height="54"/>
+          <rect class="o" x="58" y="42" width="86" height="76"/>
           <rect class="o" x="36" y="247" width="152" height="32"/>
           <path class="o" d="M480 160 V62 H614 V160 Z" stroke-dasharray="3 4"/>
-          <text x="198" y="58">U1</text><text x="78" y="49">U2</text><text x="38" y="241">J1</text>
+          <text x="198" y="58">U1</text><text x="60" y="35">U2</text><text x="38" y="241">J1</text>
           <text x="398" y="188">LED1</text><text x="432" y="188">R1</text><text x="432" y="219">R2</text>
           <text x="372" y="112">C1</text><text x="484" y="176">ANT1</text>
           <text class="big" x="226" y="262">DIEGO AZCONA</text>
@@ -230,15 +234,13 @@
     </div>
   </div>
   <p class="cap" id="cap" aria-live="polite"></p>
-  <p class="hint" id="stagehint"></p>
 
-  <p class="hint">HOVER OR TAP A SECTION</p>
 
   <section class="sec" id="about">
     <button type="button" aria-expanded="false" aria-controls="p-about"><span>About</span><span class="plus" aria-hidden="true"></span></button>
     <div class="panel" id="p-about" role="region" aria-label="About"><div>
       <div class="body">
-        <p>I'm pursuing a Bachelor of Science in Electrical Engineering with a minor in Applied Mathematics at the New Jersey Institute of Technology, expecting to graduate in May 2028. I'm passionate about hands-on engineering, from designing and assembling circuits to developing embedded systems and bringing ideas to life through practical, real-world applications.</p>
+        <p>I'm a first-generation Hispanic college student pursuing a Bachelor of Science in Electrical Engineering with a minor in Applied Mathematics at NJIT, graduating in May 2028. I've always been curious about how things work and enjoy challenging myself to learn new skills, explore different areas of engineering, and bring my ideas to life. I'm someone who values hard work, personal growth, and stepping outside my comfort zone. As a first-generation student, I'm motivated to make the most of every opportunity, build meaningful connections, and pave the way for others who share a similar background.</p>
         <dl class="facts">
           <dt>Education</dt><dd>NJIT, Newark NJ. B.S. Electrical Engineering, minor in Applied Mathematics. GPA 3.57.</dd>
           <dt>Coursework</dt><dd>Circuits II, Digital Design, Energy Conversion, Signals and Systems</dd>
@@ -338,6 +340,12 @@
 (function () {
   var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   var secs = Array.prototype.slice.call(document.querySelectorAll('.sec'));
+  var HOVER_DELAY = 260;   // ms the cursor must rest before a section opens
+  var SCROLL_QUIET = 220;  // ms of no scrolling required before hover can open
+  var lastScroll = -1e9;
+  function noteScroll() { lastScroll = performance.now(); }
+  window.addEventListener('scroll', noteScroll, { passive: true });
+  window.addEventListener('wheel', noteScroll, { passive: true });
 
   function setOpen(sec, open) {
     sec.classList.toggle('open', open);
@@ -350,14 +358,28 @@
     btn.addEventListener('click', function () {
       if (canHover) {
         pinned = !pinned;
+        sec.classList.toggle('pinned', pinned);
         setOpen(sec, pinned || sec.matches(':hover'));
       } else {
         setOpen(sec, !sec.classList.contains('open'));
       }
     });
     if (canHover) {
-      sec.addEventListener('mouseenter', function () { setOpen(sec, true); });
-      sec.addEventListener('mouseleave', function () { if (!pinned) setOpen(sec, false); });
+      var timer = null;
+      function arm() {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          if (!sec.matches(':hover')) return;
+          // still scrolling: wait for the page to settle, then check again
+          if (performance.now() - lastScroll < SCROLL_QUIET) { arm(); return; }
+          setOpen(sec, true);
+        }, HOVER_DELAY);
+      }
+      sec.addEventListener('mouseenter', arm);
+      sec.addEventListener('mouseleave', function () {
+        clearTimeout(timer);
+        if (!pinned) setOpen(sec, false);
+      });
     }
   });
 
@@ -390,17 +412,17 @@
   var board = document.getElementById('board');
   var host = document.getElementById('parts');
   var cap = document.getElementById('cap');
-  var hintEl = document.getElementById('stagehint');
   if (!stage) return;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  hintEl.textContent = canHover ? 'CLICK AND DRAG THE BOARD TO ROTATE · HOVER A PART' : 'DRAG THE BOARD TO ROTATE · TAP A PART';
 
-  var DEFAULT = '<strong>REV A</strong>A FireIQ-style sensor node, drawn in the layout of a real board.';
+  var DEFAULT = canHover
+    ? '<strong>Tip</strong>Click and drag to rotate the board, or hover over a part to see what it does.'
+    : '<strong>Tip</strong>Drag to rotate the board, or tap a part to see what it does.';
   var parts = [
     { id: 'U1', x: 200, y: 70, w: 150, h: 150, t: 16, top: 'linear-gradient(135deg,#3d3d44,#1c1c20)', side: '#2c2c32', text: '<b>ESP32</b><span>FIREIQ NODE</span>',
       desc: 'ESP32 module. Runs the C++ firmware and sends sensor data to the second unit over ESP-NOW.' },
-    { id: 'U2', x: 80, y: 60, w: 46, h: 44, t: 8, top: '#1c1c20', side: '#16161a', text: '<em>DHT11</em>',
+    { id: 'U2', x: 64, y: 48, w: 74, h: 64, t: 12, top: '#1c1c20', side: '#16161a', text: '<b style="font-size:11px;letter-spacing:0.08em">DHT11</b>',
       desc: 'DHT11 sensor. Measures temperature and humidity.' },
     { id: 'J1', x: 40, y: 252, w: 144, h: 22, t: 10, top: 'radial-gradient(circle at 50% 50%, #d4b15f 0 2.6px, transparent 3.2px) 0 0/18px 100%, #111114', side: '#0d0d10', text: '',
       desc: 'J1 header. Breakout for the flame and gas sensor inputs and power.' },
@@ -452,6 +474,7 @@
   var dragging = false, lastX = 0, visible = true;
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
+  stage.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
   stage.addEventListener('pointerdown', function (e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     dragging = true; lastX = e.clientX;
